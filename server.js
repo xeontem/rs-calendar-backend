@@ -33,6 +33,7 @@ server.get( '/reset' , (req, res) => {
 
 server.get( '/events' , (req, res) => {
 	console.log('events requested');
+	res.set({'Access-Control-Allow-Origin': '*'});
 	res.send(events);
 });
 
@@ -43,11 +44,13 @@ server.get( '/events/*' , (req, res) => {
 	events.map(ev => {
 		if(ev.id === id) event = ev;
 	});
+	res.set({'Access-Control-Allow-Origin': '*'});
 	res.send(event);
 });
 
 server.get( '/trainers' , (req, res) => {
 	console.log('trainers requested');
+	res.set({'Access-Control-Allow-Origin': '*'});
 	res.send(trainers);
 });
 
@@ -58,6 +61,7 @@ server.get( '/trainers/*' , (req, res) => {
 	trainers.map(trn => {
 		if(trn.id === id) return trainer = trn;
 	});
+	res.set({'Access-Control-Allow-Origin': '*'});
 	res.send(trainer);
 });
 //------------------- POST -----------------------------------
