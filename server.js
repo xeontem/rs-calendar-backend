@@ -2,16 +2,22 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 let events = require('./events.json');
-const eventsBackup = require('./events.json');
 let trainers = require('./trainers.json');
 const Event = require('./schema');
 
+
+let eventsFromDB = [];
 //----------------- DB connection ---------------------
 
-mongoose.connect('mongodb://xeontem:slipknot@ds147842.mlab.com:47842/rs-calendar');
-const db = mongoose.connection;
+mongoose.connect('mongodb://xeontem:slipknot@ds147842.mlab.com:47842/rs-calendar', { useMongoClient: true });
+// const db = mongoose.connection;
 mongoose.connection.on('connected', function () {  
-  console.log('Mongoose default connection opened with xeontem:slipknot@ds147842.mlab.com:47842/rs-calendar');
+  	console.log('Mongoose default connection opened with xeontem:slipknot@ds147842.mlab.com:47842/rs-calendar');
+  	Event.find({}, function (err, docs) {
+  		docs.map(model => {
+  			eventsFromDB.push(model.toObject())
+  		})
+	});
 }); 
 //----------------- instruments ------------------
 
@@ -34,21 +40,34 @@ server.use(bodyParser.urlencoded({     // to support URL-encoded bodies
 })); 
 
 server.all('*', function(req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
+	console.log('--------------------------------------------------------------');
+	console.log('request from: ' + req.connection.remoteAddress);
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
 });
 
 //------------------------- GET -----------------------------------------
 server.get( '/reset' , (req, res) => {
-	console.log('events resetted');
-	events = eventsBackup.slice();
+	console.log('events restored from DB');
+	Event.find({}, function (err, docs) {
+  		events = [];
+  		docs.map(model => {
+  			events.push(model.toObject())
+  		})
+	});
 	res.status('200').send();
 });
 
+server.get( '/dbEvents' , (req, res) => {
+	console.log('events from db requested');
+	// res.set({'Access-Control-Allow-Origin': '*'});
+	res.send(eventsFromDB);
+});
 
 server.get( '/events' , (req, res) => {
+	// console.log(req);
 	console.log('events requested');
 	// res.set({'Access-Control-Allow-Origin': '*'});
 	res.send(events);
@@ -82,11 +101,6 @@ server.get( '/trainers/*' , (req, res) => {
 	res.send(trainer);
 });
 //------------------- POST -----------------------------------
-// server.post('/events', (req, res, next) => {
-//     res.header("Access-Control-Allow-Origin", "*");
-//     res.header("Access-Control-Allow-Headers", "X-Requested-With");
-//     next();
-// });
 
 server.post('/events', (req, res) => {
 	if(req.body.delete) {
