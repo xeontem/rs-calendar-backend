@@ -57,7 +57,7 @@ server.get( '/reset' , (req, res) => {
   			events.push(model.toObject())
   		})
 	});
-	res.status('200').send();
+	res.status('200').send({mess: 'events successfully resetted'});
 });
 
 server.get( '/dbEvents' , (req, res) => {
