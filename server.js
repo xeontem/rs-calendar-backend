@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser')
 let events = require('./events.json');
+let eventsBackup = require('./events.json');
 let trainers = require('./trainers.json');
 
 //----------------- instruments ------------------
@@ -23,6 +24,13 @@ server.use(bodyParser.urlencoded({     // to support URL-encoded bodies
   extended: true
 })); 
 //------------------------- GET -----------------------------------------
+server.get( '/reset' , (req, res) => {
+	console.log('events resetted');
+	events = eventsBackup.slice();
+	res.status('200').send();
+});
+
+
 server.get( '/events' , (req, res) => {
 	console.log('events requested');
 	res.send(events);
@@ -61,11 +69,13 @@ server.post('/events', (req, res) => {
         filtered = filtered.concat(events.slice(index+1));
         events = filtered;
 		console.log('event: ' + req.body.id + ' deleted');
+        res.status('200').send();
         return
 	}
 	let index = searchEventById(req.body.id);
 	if(!index) events.push(req.body);
 	else events[index] = req.body;
 	console.log('new event recieved');
+	res.status('200').send();
 });
 server.listen(process.env.PORT || 4444);
