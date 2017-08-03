@@ -4,8 +4,7 @@ const mongoose = require('mongoose');
 let events = require('./events.json');
 let trainers = require('./trainers.json');
 const Event = require('./schema');
-
-
+let users = [];
 let eventsFromDB = [];
 //----------------- DB connection ---------------------
 
@@ -15,7 +14,7 @@ mongoose.connection.on('connected', function () {
   	console.log('Mongoose default connection opened with xeontem:slipknot@ds147842.mlab.com:47842/rs-calendar');
   	Event.find({}, function (err, docs) {
   		docs.map(model => {
-  			eventsFromDB.push(model.toObject())
+  			eventsFromDB.push(model.toObject());
   		})
 	});
 }); 
@@ -52,6 +51,10 @@ server.all('*', function(req, res, next) {
 server.get( '/reset' , (req, res) => {
 	console.log('events restored from DB');
 	Event.find({}, function (err, docs) {
+  		if(!docs.map) {
+  			res.status('200').send({mess: 'something went wrong... try later'});
+  			return
+  		}
   		events = [];
   		docs.map(model => {
   			events.push(model.toObject())
@@ -103,6 +106,37 @@ server.get( '/trainers/*' , (req, res) => {
 //------------------- POST -----------------------------------
 
 server.post('/events', (req, res) => {
+	//------------------------ signIN --------------------------
+	if(req.body.signin) {
+		console.log(`user ${req.body.login} try to register`);
+		users.push({
+			login: req.body.login,
+			password: req.body.password,
+			avatar: req.body.avatar
+		});
+		let message = `user ${req.body.login} successfully registered`
+		console.log(message);
+		res.send({message});
+		return
+	}
+	//------------------------ logIN --------------------------
+	if(req.body.login) {
+		console.log(`user ${req.body.login} try to logIn`);
+		let isAdmin = false;
+		let avatar;
+		users.map(user => {
+			if(user.login === req.body.login && user.password === req.body.password){
+				isAdmin = true;
+				avatar = user.avatar;
+			}
+		});
+		let success = isAdmin ? 'successfull' : 'failed';
+		let message = `user ${req.body.login} login ${success}`
+		console.log(message);
+		res.send({isAdmin, message, avatar});
+		return
+	}
+	//------------------------ delete custom event --------------------------
 	if(req.body.delete) {
 		let index = searchEventById(req.body.id)
 		let filtered = events.slice(0, index);
@@ -112,6 +146,7 @@ server.post('/events', (req, res) => {
         res.status('200').send();
         return
 	}
+	//------------------------ store event changes or store new event --------------------------
 	let index = searchEventById(req.body.id);
 	if(!index) events.push(req.body);
 	else events[index] = req.body;
