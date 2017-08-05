@@ -109,14 +109,25 @@ server.post('/events', (req, res) => {
 	//------------------------ signIN --------------------------
 	if(req.body.signin) {
 		console.log(`user ${req.body.login} try to register`);
-		users.push({
-			login: req.body.login,
-			password: req.body.password,
-			avatar: req.body.avatar
+		let ispresent = false;
+		users.map(user => {
+			if(user.login == req.body.login) ispresent = true;
 		});
-		let message = `user ${req.body.login} successfully registered`
-		console.log(message);
-		res.send({message});
+		if(!ispresent) {
+			users.push({
+				login: req.body.login,
+				password: req.body.password,
+				avatar: req.body.avatar
+			});
+			let message = `user ${req.body.login} successfully registered`
+			console.log(message);
+			res.send({message});
+		} else {
+			ispresent = false;
+			let message = `user ${req.body.login} already registered`
+			console.log(message);
+			res.send({message, notregister: true});
+		}
 		return
 	}
 	//------------------------ logIN --------------------------
